@@ -360,6 +360,13 @@ onMounted(async () => {
 
 	isLoading.value = false;
 
+	// Show about if first visit
+	const showedInfo = Boolean(localStorage["showed:info"]);
+	if (!showedInfo) {
+		isAboutOpen.value = true;
+		localStorage["showed:info"] = "true";
+	}
+
 	// Jump to url params
 	const params = new URLSearchParams(location.search);
 	const latStr = params.get("lat");
