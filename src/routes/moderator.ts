@@ -278,12 +278,10 @@ export default function (app: App) {
 		}
 	});
 
-	app.get("/moderator/users", authMiddleware, moderatorMiddleware, async (req, res) => {
+	app.post("/moderator/users", authMiddleware, moderatorMiddleware, async (req, res) => {
 		try {
-			const idsStr = req.query["ids"] as string;
-			const ids = idsStr.split(",")
-				.map(item => Number.parseInt(item))
-				.filter(item => !Number.isNaN(item) && item > 0);
+			const idArr = req.body.userIds as number[];
+			const ids = idArr.filter(item => !Number.isNaN(item) && item > 0);
 
 			const users = await prisma.user.findMany({
 				where: { id: { in: ids } },
