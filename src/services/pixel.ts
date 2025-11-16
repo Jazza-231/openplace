@@ -143,6 +143,12 @@ export class PixelService {
 			});
 
 			if (pixel) {
+				if (pixel.user.banned) {
+					paintedBy.push({
+						id: -1,
+						name: "Suspended Account"
+					});
+				} else {
 				paintedBy.push({
 					id: pixel.user.id,
 					name: pixel.user.nickname || pixel.user.name,
@@ -154,6 +160,7 @@ export class PixelService {
 					discordUserId: pixel.user.discordUserId,
 					verified: pixel.user.verified
 				});
+			}
 			} else {
 				paintedBy.push({
 					id: 0
