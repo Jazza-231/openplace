@@ -12,6 +12,13 @@ import { getRandomUniqueName } from "../utils/unique-name.js";
 import { rateLimiter } from "../services/rate-limiter.js";
 import { discordBot } from "../discord/bot.js";
 
+const LOGIN_RATE_LIMIT_ATTEMPTS = Number.parseInt(process.env["LOGIN_RATE_LIMIT_ATTEMPTS"] ?? "") || 5;
+const LOGIN_RATE_LIMIT_MS = Number.parseInt(process.env["LOGIN_RATE_LIMIT_MS"] ?? "") || 300_000;
+const SIGNUP_RATE_LIMIT_ATTEMPTS = Number.parseInt(process.env["SIGNUP_RATE_LIMIT_ATTEMPTS"] ?? "") || 2;
+const SIGNUP_RATE_LIMIT_MS = Number.parseInt(process.env["SIGNUP_RATE_LIMIT_MS"] ?? "") || 3_600_000;
+const PASSWORD_RESET_RATE_LIMIT_ATTEMPTS = Number.parseInt(process.env["PASSWORD_RESET_RATE_LIMIT_ATTEMPTS"] ?? "") || 3;
+const PASSWORD_RESET_RATE_LIMIT_MS = Number.parseInt(process.env["PASSWORD_RESET_RATE_LIMIT_MS"] ?? "") || 600_000;
+
 const userService = new UserService(prisma);
 const authService = new AuthService(prisma);
 
@@ -34,7 +41,7 @@ export default function (app: App) {
 			}
 
 			// Rate limiting
-			const rateLimit = rateLimiter.checkRateLimit(req.ip!, 5, 300_000);
+			const rateLimit = rateLimiter.checkRateLimit(req.ip!, LOGIN_RATE_LIMIT_ATTEMPTS, LOGIN_RATE_LIMIT_MS);
 			if (!rateLimit.allowed) {
 				const timestamp = new Date()
 					.toISOString();
@@ -77,6 +84,16 @@ export default function (app: App) {
 					await userService.setLastIP(user.id, req.ip);
 				}
 			} else {
+				// Rate limiting
+				const signupRateLimit = rateLimiter.checkRateLimit(req.ip!, SIGNUP_RATE_LIMIT_ATTEMPTS, SIGNUP_RATE_LIMIT_MS);
+				if (!signupRateLimit.allowed) {
+					const timestamp = new Date()
+						.toISOString();
+					console.log(`[${timestamp}] Rate limit exceeded for IP ${req.ip}`);
+					return res.status(429)
+						.json({ error: "Too many attempts. Please try again later." });
+				}
+
 				if (!UserService.isValidUsername(username)) {
 					return res.status(400)
 						.json({ error: "Username must be between 3 and 16 characters and cannot contain special characters." });
@@ -188,7 +205,7 @@ export default function (app: App) {
 					.json({ error: "Username required" });
 			}
 
-			const rateLimit = rateLimiter.checkRateLimit(req.ip!, 3, 600_000);
+			const rateLimit = rateLimiter.checkRateLimit(req.ip!, PASSWORD_RESET_RATE_LIMIT_ATTEMPTS, PASSWORD_RESET_RATE_LIMIT_MS);
 			if (!rateLimit.allowed) {
 				return res.status(429)
 					.json({ error: "Too many password reset attempts. Please try again later." });
@@ -291,7 +308,7 @@ ${resetUrl}
 					.json({ error: "Password must be at least 8 characters long" });
 			}
 
-			const rateLimit = rateLimiter.checkRateLimit(req.ip!, 5, 600_000);
+			const rateLimit = rateLimiter.checkRateLimit(req.ip!, PASSWORD_RESET_RATE_LIMIT_ATTEMPTS, PASSWORD_RESET_RATE_LIMIT_MS);
 			if (!rateLimit.allowed) {
 				return res.status(429)
 					.json({ error: "Too many password reset attempts. Please try again later." });

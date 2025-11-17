@@ -11,9 +11,7 @@ export class RateLimiter {
 	private cleanupInterval: NodeJS.Timeout;
 
 	constructor() {
-		this.cleanupInterval = setInterval(() => {
-			this.cleanup();
-		}, 60_000);
+		this.cleanupInterval = setInterval(this.cleanup.bind(this), 60_000);
 	}
 
 	private cleanup(): void {

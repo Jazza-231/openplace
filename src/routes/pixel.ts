@@ -10,6 +10,9 @@ import { UserService } from "../services/user.js";
 import { AuthenticatedRequest } from "../types/index.js";
 import { rateLimiter } from "../services/rate-limiter.js";
 
+const PAINT_RATE_LIMIT_ATTEMPTS = Number.parseInt(process.env["PAINT_RATE_LIMIT_ATTEMPTS"] ?? "") || 60;
+const PAINT_RATE_LIMIT_MS = Number.parseInt(process.env["PAINT_RATE_LIMIT_MS"] ?? "") || 10_000;
+
 const pixelService = new PixelService(prisma);
 const userService = new UserService(prisma);
 
@@ -105,7 +108,7 @@ export default function (app: App) {
 
 	app.post("/:season/pixel/:tileX/:tileY", authMiddleware, async (req: AuthenticatedRequest, res) => {
 		try {
-			const rateLimit = rateLimiter.checkRateLimit(req.ip!, 60, 10_000);
+			const rateLimit = rateLimiter.checkRateLimit(req.ip!, PAINT_RATE_LIMIT_ATTEMPTS, PAINT_RATE_LIMIT_MS);
 			if (!rateLimit.allowed) {
 				return res.status(429)
 					.json({ error: "Too many requests. Please slow down." });
