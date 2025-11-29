@@ -1,5 +1,4 @@
-import { App, NextFunction, Response } from "@tinyhttp/app";
-import { authMiddleware } from "../middleware/auth.js";
+import { App } from "@tinyhttp/app";
 import { createErrorResponse } from "../utils/response.js";
 import { prisma } from "../config/database.js";
 import { RegionService } from "../services/region.js";
@@ -8,7 +7,7 @@ import { COUNTRIES } from "../utils/country.js";
 const regionService = new RegionService(prisma);
 
 export default function (app: App) {
-	app.get("/v1/autocomplete", authMiddleware, async (req, res) => {
+	app.get("/v1/autocomplete", async (req, res) => {
 		const text = req.query["text"] as string;
 		if (typeof text !== "string" || text.length === 0) {
 			return createErrorResponse("No query provided", 400);
